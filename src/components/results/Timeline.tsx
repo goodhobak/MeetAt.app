@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import type { Event } from '@/types';
 import {
   aggregateVotes,
@@ -8,12 +9,14 @@ import {
   filterByRequiredAttendees,
   type TimeBlock,
 } from '@/services/calculation';
+import { confirmTime } from '@/services/storage';
 
 interface TimelineProps {
   event: Event;
+  onEventChange?: (updatedEvent: Event) => void;
 }
 
-export function Timeline({ event }: TimelineProps) {
+export function Timeline({ event, onEventChange }: TimelineProps) {
   const [selectedBlock, setSelectedBlock] = useState<TimeBlock | null>(null);
 
   // Aggregate votes, apply filter, and find continuous blocks
@@ -28,6 +31,44 @@ export function Timeline({ event }: TimelineProps) {
 
   const handleBlockClick = (block: TimeBlock) => {
     setSelectedBlock(selectedBlock?.start.id === block.start.id ? null : block);
+  };
+
+  const handleConfirm = (block: TimeBlock) => {
+    const organizerName = prompt('확정자 이름을 입력하세요:');
+    if (!organizerName || !organizerName.trim()) {
+      return;
+    }
+
+    const note = prompt('참여자에게 전달할 메모를 입력하세요 (선택사항):');
+
+    try {
+      const updatedEvent = confirmTime(
+        event.id,
+        block.start.date,
+        block.start.time,
+        block.duration,
+        organizerName.trim(),
+        note?.trim() || undefined
+      );
+
+      if (onEventChange) {
+        onEventChange(updatedEvent);
+      }
+
+      toast.success('회의 시간이 확정되었습니다!');
+    } catch (error) {
+      toast.error('시간 확정에 실패했습니다');
+    }
+  };
+
+  // Check if a block is the confirmed block
+  const isConfirmedBlock = (block: TimeBlock): boolean => {
+    if (!event.confirmed) return false;
+
+    const blockStart = new Date(`${block.start.date}T${block.start.time}`);
+    const confirmedStart = new Date(event.confirmed.start);
+
+    return blockStart.getTime() === confirmedStart.getTime();
   };
 
   return (
@@ -101,15 +142,21 @@ export function Timeline({ event }: TimelineProps) {
                     <div className="flex-1 h-12 bg-gray-100 rounded-lg overflow-hidden relative">
                       <button
                         onClick={() => handleBlockClick(block)}
-                        className={`h-full transition-all hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          isSelected ? 'ring-2 ring-blue-500' : ''
+                        className={`h-full transition-all hover:opacity-80 focus:outline-none focus:ring-2 ${
+                          isConfirmedBlock(block)
+                            ? 'ring-2 ring-yellow-500'
+                            : isSelected
+                            ? 'ring-2 ring-blue-500'
+                            : ''
                         }`}
                         style={{
                           width: `${heightPercent}%`,
-                          backgroundColor: '#3b82f6', // blue-500
+                          backgroundColor: isConfirmedBlock(block) ? '#fbbf24' : '#3b82f6', // yellow-400 or blue-500
+                          boxShadow: isConfirmedBlock(block) ? '0 0 10px rgba(251, 191, 36, 0.5)' : undefined,
                         }}
                       >
-                        <span className="ml-3 text-white font-medium text-sm">
+                        <span className="ml-3 text-white font-medium text-sm flex items-center gap-1">
+                          {isConfirmedBlock(block) && <span>✅</span>}
                           {block.availableCount}명
                         </span>
                       </button>
@@ -161,6 +208,18 @@ export function Timeline({ event }: TimelineProps) {
                                 </span>
                               ))}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Confirm button */}
+                        {!event.confirmed && (
+                          <div className="mt-4 pt-3 border-t border-blue-200">
+                            <button
+                              onClick={() => handleConfirm(block)}
+                              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              이 시간으로 확정하기
+                            </button>
                           </div>
                         )}
                       </div>

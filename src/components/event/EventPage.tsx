@@ -186,7 +186,7 @@ export function EventPage() {
           {viewMode === 'vote' ? (
             <VotingInterface event={event} onVoteChange={setEvent} />
           ) : (
-            <ResultsView event={event} />
+            <ResultsView event={event} onEventChange={setEvent} />
           )}
         </div>
       </div>

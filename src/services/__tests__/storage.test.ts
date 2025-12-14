@@ -20,6 +20,8 @@ import {
   getVote,
   toggleRequiredAttendee,
   clearRequiredAttendees,
+  confirmTime,
+  unconfirmTime,
 } from '../storage';
 import type { Event, Vote } from '@/types';
 
@@ -429,6 +431,148 @@ describe('storage service', () => {
         const updatedEvent = clearRequiredAttendees(event.id);
 
         expect(updatedEvent.requiredAttendees).toEqual([]);
+      });
+    });
+  });
+
+  describe('Time Confirmation Operations', () => {
+    describe('confirmTime', () => {
+      it('should create confirmed time with correct ISO timestamps', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        const updatedEvent = confirmTime(
+          event.id,
+          '2025-12-15',
+          '14:00',
+          60,
+          'Alice'
+        );
+
+        expect(updatedEvent.confirmed).toBeDefined();
+        expect(updatedEvent.confirmed?.start).toBe('2025-12-15T14:00:00.000Z');
+        expect(updatedEvent.confirmed?.end).toBe('2025-12-15T15:00:00.000Z');
+      });
+
+      it('should calculate end time correctly based on duration', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        // Test with 90 minute duration
+        const updatedEvent = confirmTime(
+          event.id,
+          '2025-12-15',
+          '10:30',
+          90,
+          'Bob'
+        );
+
+        const startDate = new Date(updatedEvent.confirmed!.start);
+        const endDate = new Date(updatedEvent.confirmed!.end);
+        const durationMs = endDate.getTime() - startDate.getTime();
+        const durationMinutes = durationMs / (1000 * 60);
+
+        expect(durationMinutes).toBe(90);
+      });
+
+      it('should store organizer name and confirmedAt timestamp', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        const beforeConfirm = Date.now();
+        const updatedEvent = confirmTime(
+          event.id,
+          '2025-12-15',
+          '14:00',
+          60,
+          'Alice'
+        );
+        const afterConfirm = Date.now();
+
+        expect(updatedEvent.confirmed?.confirmedBy).toBe('Alice');
+        expect(updatedEvent.confirmed?.confirmedAt).toBeDefined();
+
+        const confirmedAtTimestamp = new Date(updatedEvent.confirmed!.confirmedAt).getTime();
+        expect(confirmedAtTimestamp).toBeGreaterThanOrEqual(beforeConfirm);
+        expect(confirmedAtTimestamp).toBeLessThanOrEqual(afterConfirm);
+      });
+
+      it('should store optional note when provided', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        const updatedEvent = confirmTime(
+          event.id,
+          '2025-12-15',
+          '14:00',
+          60,
+          'Alice',
+          'Please arrive 5 minutes early'
+        );
+
+        expect(updatedEvent.confirmed?.note).toBe('Please arrive 5 minutes early');
+      });
+
+      it('should not store note when not provided', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        const updatedEvent = confirmTime(
+          event.id,
+          '2025-12-15',
+          '14:00',
+          60,
+          'Alice'
+        );
+
+        expect(updatedEvent.confirmed?.note).toBeUndefined();
+      });
+
+      it('should persist confirmation to localStorage', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        confirmTime(event.id, '2025-12-15', '14:00', 60, 'Alice', 'Test note');
+
+        const retrieved = getEvent(event.id);
+        expect(retrieved.confirmed).toBeDefined();
+        expect(retrieved.confirmed?.confirmedBy).toBe('Alice');
+        expect(retrieved.confirmed?.note).toBe('Test note');
+      });
+    });
+
+    describe('unconfirmTime', () => {
+      it('should set confirmed to null', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        // First confirm a time
+        confirmTime(event.id, '2025-12-15', '14:00', 60, 'Alice');
+
+        // Then unconfirm
+        const updatedEvent = unconfirmTime(event.id);
+
+        expect(updatedEvent.confirmed).toBeNull();
+      });
+
+      it('should work when no confirmation exists', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        const updatedEvent = unconfirmTime(event.id);
+
+        expect(updatedEvent.confirmed).toBeNull();
+      });
+
+      it('should persist unconfirm to localStorage', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        confirmTime(event.id, '2025-12-15', '14:00', 60, 'Alice');
+        unconfirmTime(event.id);
+
+        const retrieved = getEvent(event.id);
+        expect(retrieved.confirmed).toBeNull();
       });
     });
   });

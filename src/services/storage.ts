@@ -355,3 +355,53 @@ export function clearRequiredAttendees(eventId: string): Event {
   saveEvent(updatedEvent);
   return updatedEvent;
 }
+
+// ============ Time Confirmation Operations ============
+
+/**
+ * Confirm a meeting time
+ */
+export function confirmTime(
+  eventId: string,
+  startDate: string,
+  startTime: string,
+  duration: number,
+  organizerName: string,
+  note?: string
+): Event {
+  const event = getEvent(eventId);
+
+  const startDateTime = new Date(`${startDate}T${startTime}`);
+  const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 1000);
+
+  const confirmed = {
+    start: startDateTime.toISOString(),
+    end: endDateTime.toISOString(),
+    confirmedBy: organizerName,
+    confirmedAt: new Date().toISOString(),
+    note: note || undefined,
+  };
+
+  const updatedEvent: Event = {
+    ...event,
+    confirmed,
+  };
+
+  saveEvent(updatedEvent);
+  return updatedEvent;
+}
+
+/**
+ * Remove time confirmation (unconfirm)
+ */
+export function unconfirmTime(eventId: string): Event {
+  const event = getEvent(eventId);
+
+  const updatedEvent: Event = {
+    ...event,
+    confirmed: null,
+  };
+
+  saveEvent(updatedEvent);
+  return updatedEvent;
+}
