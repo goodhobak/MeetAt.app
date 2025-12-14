@@ -6,11 +6,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { getEvent } from '@/services/storage';
 import { LockScreen } from './LockScreen';
 import { SharePanel } from '@/components/shared/SharePanel';
 import { VotingInterface } from '@/components/vote/VotingInterface';
+import { ResultsView } from '@/components/results/ResultsView';
 import type { Event } from '@/types';
+
+type ViewMode = 'vote' | 'results';
 
 export function EventPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +23,7 @@ export function EventPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('vote');
 
   useEffect(() => {
     if (!id) {
@@ -145,9 +150,44 @@ export function EventPage() {
           </div>
         </div>
 
-        {/* Voting Section */}
-        <div className="mt-8">
-          <VotingInterface event={event} onVoteChange={setEvent} />
+        {/* Tab Navigation */}
+        <div className="mt-8 border-t border-gray-200 pt-6">
+          <div className="flex space-x-1 rounded-lg bg-gray-100 p-1">
+            <button
+              onClick={() => setViewMode('vote')}
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                viewMode === 'vote'
+                  ? 'bg-white text-gray-900 shadow'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              투표하기
+            </button>
+            <button
+              onClick={() => setViewMode('results')}
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                viewMode === 'results'
+                  ? 'bg-white text-gray-900 shadow'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              결과 보기
+              {event.votes.length > 0 && (
+                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                  {event.votes.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="mt-6">
+          {viewMode === 'vote' ? (
+            <VotingInterface event={event} onVoteChange={setEvent} />
+          ) : (
+            <ResultsView event={event} />
+          )}
         </div>
       </div>
     </div>
