@@ -227,3 +227,93 @@ export function getRemainingLockoutTime(eventId: string): number {
   const remaining = lockState.lockedUntil - Date.now();
   return Math.max(0, remaining);
 }
+
+// ============ Vote Operations ============
+
+/**
+ * Check if a participant name is already used
+ */
+export function checkDuplicateParticipant(event: Event, participantName: string): boolean {
+  return event.votes.some(
+    (vote) => vote.participantName.toLowerCase() === participantName.toLowerCase()
+  );
+}
+
+/**
+ * Submit a new vote
+ *
+ * @throws Error if participant name is duplicate
+ */
+export function submitVote(eventId: string, vote: Vote): Event {
+  const event = getEvent(eventId);
+
+  // Check for duplicate name
+  if (checkDuplicateParticipant(event, vote.participantName)) {
+    throw new Error(
+      'A participant with this name has already voted. Please use a different name or edit your existing vote.'
+    );
+  }
+
+  // Add vote to event
+  const updatedEvent: Event = {
+    ...event,
+    votes: [...event.votes, vote],
+  };
+
+  // Save to storage
+  saveEvent(updatedEvent);
+  return updatedEvent;
+}
+
+/**
+ * Update an existing vote
+ */
+export function updateVote(
+  eventId: string,
+  participantName: string,
+  newSelections: boolean[]
+): Event {
+  const event = getEvent(eventId);
+
+  // Find and update the vote
+  const updatedVotes = event.votes.map((vote) =>
+    vote.participantName === participantName
+      ? {
+          ...vote,
+          selections: newSelections,
+          updatedAt: new Date().toISOString(),
+        }
+      : vote
+  );
+
+  const updatedEvent: Event = {
+    ...event,
+    votes: updatedVotes,
+  };
+
+  saveEvent(updatedEvent);
+  return updatedEvent;
+}
+
+/**
+ * Delete a vote
+ */
+export function deleteVote(eventId: string, participantName: string): Event {
+  const event = getEvent(eventId);
+
+  // Remove the vote
+  const updatedEvent: Event = {
+    ...event,
+    votes: event.votes.filter((vote) => vote.participantName !== participantName),
+  };
+
+  saveEvent(updatedEvent);
+  return updatedEvent;
+}
+
+/**
+ * Get a specific vote by participant name
+ */
+export function getVote(event: Event, participantName: string): Vote | undefined {
+  return event.votes.find((vote) => vote.participantName === participantName);
+}

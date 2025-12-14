@@ -13,8 +13,13 @@ import {
   clearLockState,
   getRemainingLockoutTime,
   EventNotFoundError,
+  checkDuplicateParticipant,
+  submitVote,
+  updateVote,
+  deleteVote,
+  getVote,
 } from '../storage';
-import type { Event } from '@/types';
+import type { Event, Vote } from '@/types';
 
 const createMockEvent = (id: string = 'abc12345'): Event => ({
   id,
@@ -239,6 +244,130 @@ describe('storage service', () => {
         const remaining = getRemainingLockoutTime('abc12345');
         expect(remaining).toBeGreaterThan(0);
         expect(remaining).toBeLessThanOrEqual(5000);
+      });
+    });
+  });
+
+  describe('Vote Operations', () => {
+    describe('checkDuplicateParticipant', () => {
+      it('should return true for duplicate names (case insensitive)', () => {
+        const event = createMockEvent();
+        event.votes = [
+          { participantName: 'Alice', selections: [], submittedAt: new Date().toISOString() },
+        ];
+
+        expect(checkDuplicateParticipant(event, 'Alice')).toBe(true);
+        expect(checkDuplicateParticipant(event, 'alice')).toBe(true);
+        expect(checkDuplicateParticipant(event, 'ALICE')).toBe(true);
+      });
+
+      it('should return false for non-duplicate names', () => {
+        const event = createMockEvent();
+        event.votes = [
+          { participantName: 'Alice', selections: [], submittedAt: new Date().toISOString() },
+        ];
+
+        expect(checkDuplicateParticipant(event, 'Bob')).toBe(false);
+      });
+    });
+
+    describe('submitVote', () => {
+      it('should add vote to event', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        const vote = {
+          participantName: 'Alice',
+          selections: [true, false, true],
+          submittedAt: new Date().toISOString(),
+        };
+
+        const updatedEvent = submitVote(event.id, vote);
+        expect(updatedEvent.votes).toHaveLength(1);
+        expect(updatedEvent.votes[0].participantName).toBe('Alice');
+      });
+
+      it('should throw error for duplicate name', () => {
+        const event = createMockEvent();
+        event.votes = [
+          { participantName: 'Alice', selections: [], submittedAt: new Date().toISOString() },
+        ];
+        saveEvent(event);
+
+        const vote = {
+          participantName: 'alice',
+          selections: [true, false],
+          submittedAt: new Date().toISOString(),
+        };
+
+        expect(() => submitVote(event.id, vote)).toThrow(/already voted/);
+      });
+    });
+
+    describe('updateVote', () => {
+      it('should update existing vote', () => {
+        const event = createMockEvent();
+        event.votes = [
+          {
+            participantName: 'Alice',
+            selections: [true, false, false],
+            submittedAt: new Date().toISOString(),
+          },
+        ];
+        saveEvent(event);
+
+        const newSelections = [false, true, true];
+        const updatedEvent = updateVote(event.id, 'Alice', newSelections);
+
+        expect(updatedEvent.votes[0].selections).toEqual(newSelections);
+        expect(updatedEvent.votes[0].updatedAt).toBeDefined();
+      });
+
+      it('should not affect other votes', () => {
+        const event = createMockEvent();
+        event.votes = [
+          { participantName: 'Alice', selections: [true], submittedAt: new Date().toISOString() },
+          { participantName: 'Bob', selections: [false], submittedAt: new Date().toISOString() },
+        ];
+        saveEvent(event);
+
+        const updatedEvent = updateVote(event.id, 'Alice', [false]);
+        expect(updatedEvent.votes[1].selections).toEqual([false]);
+        expect(updatedEvent.votes[1].updatedAt).toBeUndefined();
+      });
+    });
+
+    describe('deleteVote', () => {
+      it('should remove vote from event', () => {
+        const event = createMockEvent();
+        event.votes = [
+          { participantName: 'Alice', selections: [], submittedAt: new Date().toISOString() },
+          { participantName: 'Bob', selections: [], submittedAt: new Date().toISOString() },
+        ];
+        saveEvent(event);
+
+        const updatedEvent = deleteVote(event.id, 'Alice');
+        expect(updatedEvent.votes).toHaveLength(1);
+        expect(updatedEvent.votes[0].participantName).toBe('Bob');
+      });
+    });
+
+    describe('getVote', () => {
+      it('should return vote for participant', () => {
+        const event = createMockEvent();
+        event.votes = [
+          { participantName: 'Alice', selections: [true], submittedAt: new Date().toISOString() },
+        ];
+
+        const vote = getVote(event, 'Alice');
+        expect(vote).toBeDefined();
+        expect(vote?.participantName).toBe('Alice');
+      });
+
+      it('should return undefined if vote not found', () => {
+        const event = createMockEvent();
+        const vote = getVote(event, 'NonExistent');
+        expect(vote).toBeUndefined();
       });
     });
   });

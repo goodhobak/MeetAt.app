@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { getEvent } from '@/services/storage';
 import { LockScreen } from './LockScreen';
 import { SharePanel } from '@/components/shared/SharePanel';
+import { VotingInterface } from '@/components/vote/VotingInterface';
 import type { Event } from '@/types';
 
 export function EventPage() {
@@ -144,11 +145,9 @@ export function EventPage() {
           </div>
         </div>
 
-        {/* Voting Section (Coming Soon) */}
-        <div className="mt-8 rounded-md bg-gray-50 p-4">
-          <p className="text-sm text-gray-600">
-            ✨ Voting feature coming soon! (FR-004)
-          </p>
+        {/* Voting Section */}
+        <div className="mt-8">
+          <VotingInterface event={event} onVoteChange={setEvent} />
         </div>
       </div>
     </div>
