@@ -11,6 +11,7 @@ import { generateUniqueEventId } from '@/utils/idGenerator';
 import { generateTimeSlots, formatDate } from '@/utils/timeSlots';
 import { validateEventFormData } from '@/services/validation';
 import { saveEvent } from '@/services/storage';
+import { hashPassword } from '@/services/crypto';
 import type { EventFormData, Event } from '@/types';
 
 const DEFAULT_DURATION = 60;
@@ -51,6 +52,11 @@ export function EventForm() {
         validatedData.lunchRange
       );
 
+      // Hash password if provided
+      const passwordHash = validatedData.password
+        ? await hashPassword(validatedData.password)
+        : null;
+
       // Create event object
       const event: Event = {
         id: eventId,
@@ -60,7 +66,7 @@ export function EventForm() {
         timeRange: validatedData.timeRange,
         excludeLunch: validatedData.excludeLunch,
         lunchRange: validatedData.lunchRange,
-        passwordHash: null, // Will be set by password component (FR-002)
+        passwordHash,
         createdAt: new Date().toISOString(),
         slots,
         votes: [],
@@ -311,6 +317,25 @@ export function EventForm() {
               </div>
             </div>
           )}
+
+          {/* Password (optional) */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password (optional)
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={formData.password}
+              onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              placeholder="Leave empty for no password"
+              maxLength={100}
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Protect your event with a password. Participants will need it to vote.
+            </p>
+          </div>
 
           {/* Error Message */}
           {errors.form && (

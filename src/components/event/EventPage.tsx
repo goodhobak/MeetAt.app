@@ -8,6 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { getEvent } from '@/services/storage';
+import { LockScreen } from './LockScreen';
 import type { Event } from '@/types';
 
 export function EventPage() {
@@ -16,6 +17,7 @@ export function EventPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -66,6 +68,19 @@ export function EventPage() {
             Create New Event
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // Show lock screen if event is password protected and not unlocked
+  if (event.passwordHash && !isUnlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center py-12">
+        <LockScreen
+          eventId={event.id}
+          passwordHash={event.passwordHash}
+          onUnlock={() => setIsUnlocked(true)}
+        />
       </div>
     );
   }
