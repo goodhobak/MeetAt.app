@@ -12,6 +12,7 @@ import {
   updateVote,
   deleteVote,
   checkDuplicateParticipant,
+  toggleRequiredAttendee,
 } from '@/services/storage';
 import type { Event, Vote } from '@/types';
 
@@ -147,6 +148,15 @@ export function VotingInterface({ event, onVoteChange }: VotingInterfaceProps) {
     setEditingName(null);
   };
 
+  const handleToggleRequired = (participantName: string) => {
+    try {
+      const updatedEvent = toggleRequiredAttendee(event.id, participantName);
+      onVoteChange(updatedEvent);
+    } catch (error) {
+      toast.error('Failed to toggle required status');
+    }
+  };
+
   // Group slots by date
   const slotsByDate = event.slots.reduce((acc, slot, index) => {
     if (!acc[slot.date]) {
@@ -274,34 +284,60 @@ export function VotingInterface({ event, onVoteChange }: VotingInterfaceProps) {
             Participants ({event.votes.length})
           </h3>
           <div className="space-y-2">
-            {event.votes.map((vote) => (
-              <div
-                key={vote.participantName}
-                className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-4 py-3"
-              >
-                <div>
-                  <div className="font-medium text-gray-900">{vote.participantName}</div>
-                  <div className="text-sm text-gray-600">
-                    {vote.selections.filter((s) => s).length} / {event.slots.length} slots
-                    selected
+            {event.votes.map((vote) => {
+              const isRequired = event.requiredAttendees.includes(vote.participantName);
+              return (
+                <div
+                  key={vote.participantName}
+                  className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleToggleRequired(vote.participantName)}
+                      className="text-2xl transition-transform hover:scale-110 focus:outline-none"
+                      aria-label={
+                        isRequired ? 'Remove from required' : 'Mark as required'
+                      }
+                      title={
+                        isRequired
+                          ? 'Required participant (click to remove)'
+                          : 'Mark as required participant'
+                      }
+                    >
+                      {isRequired ? '⭐' : '☆'}
+                    </button>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {vote.participantName}
+                        {isRequired && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                            Required
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {vote.selections.filter((s) => s).length} / {event.slots.length} slots
+                        selected
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(vote)}
-                    className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(vote.participantName)}
-                    className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
-                  >
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(vote)}
+                      className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(vote.participantName)}
+                      className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+                    >
                     Delete
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

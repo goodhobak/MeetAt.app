@@ -5,6 +5,7 @@ import {
   findContinuousBlocks,
   formatBlockTime,
   formatDuration,
+  filterByRequiredAttendees,
   type TimeBlock,
 } from '@/services/calculation';
 
@@ -15,8 +16,9 @@ interface TimelineProps {
 export function Timeline({ event }: TimelineProps) {
   const [selectedBlock, setSelectedBlock] = useState<TimeBlock | null>(null);
 
-  // Aggregate votes and find continuous blocks
-  const availability = aggregateVotes(event);
+  // Aggregate votes, apply filter, and find continuous blocks
+  const rawAvailability = aggregateVotes(event);
+  const availability = filterByRequiredAttendees(event, rawAvailability);
   const blocks = findContinuousBlocks(event, availability, event.duration);
 
   const maxCount = Math.max(...blocks.map((b) => b.availableCount), 0);
@@ -30,6 +32,32 @@ export function Timeline({ event }: TimelineProps) {
 
   return (
     <div className="space-y-4">
+      {/* Required Attendees Filter Indicator */}
+      {event.requiredAttendees.length > 0 && (
+        <div className="rounded-md bg-blue-50 border border-blue-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-blue-900">
+                ⭐ 필수 참여자 필터 적용 중:
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {event.requiredAttendees.map((name) => (
+                  <span
+                    key={name}
+                    className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <span className="text-xs text-blue-700">
+              이 참여자들이 모두 가능한 시간만 표시됩니다
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">
           최적 시간대 (최소 {formatDuration(event.duration)} 필요)

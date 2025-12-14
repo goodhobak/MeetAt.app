@@ -18,6 +18,8 @@ import {
   updateVote,
   deleteVote,
   getVote,
+  toggleRequiredAttendee,
+  clearRequiredAttendees,
 } from '../storage';
 import type { Event, Vote } from '@/types';
 
@@ -368,6 +370,65 @@ describe('storage service', () => {
         const event = createMockEvent();
         const vote = getVote(event, 'NonExistent');
         expect(vote).toBeUndefined();
+      });
+    });
+
+    describe('toggleRequiredAttendee', () => {
+      it('should add participant to required attendees list', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        const updatedEvent = toggleRequiredAttendee(event.id, 'Alice');
+
+        expect(updatedEvent.requiredAttendees).toContain('Alice');
+        expect(updatedEvent.requiredAttendees).toHaveLength(1);
+      });
+
+      it('should remove participant from required attendees list', () => {
+        const event = createMockEvent();
+        event.requiredAttendees = ['Alice', 'Bob'];
+        saveEvent(event);
+
+        const updatedEvent = toggleRequiredAttendee(event.id, 'Alice');
+
+        expect(updatedEvent.requiredAttendees).not.toContain('Alice');
+        expect(updatedEvent.requiredAttendees).toContain('Bob');
+        expect(updatedEvent.requiredAttendees).toHaveLength(1);
+      });
+
+      it('should toggle same participant multiple times', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        let updated = toggleRequiredAttendee(event.id, 'Alice');
+        expect(updated.requiredAttendees).toContain('Alice');
+
+        updated = toggleRequiredAttendee(event.id, 'Alice');
+        expect(updated.requiredAttendees).not.toContain('Alice');
+
+        updated = toggleRequiredAttendee(event.id, 'Alice');
+        expect(updated.requiredAttendees).toContain('Alice');
+      });
+    });
+
+    describe('clearRequiredAttendees', () => {
+      it('should clear all required attendees', () => {
+        const event = createMockEvent();
+        event.requiredAttendees = ['Alice', 'Bob', 'Charlie'];
+        saveEvent(event);
+
+        const updatedEvent = clearRequiredAttendees(event.id);
+
+        expect(updatedEvent.requiredAttendees).toEqual([]);
+      });
+
+      it('should work when no required attendees exist', () => {
+        const event = createMockEvent();
+        saveEvent(event);
+
+        const updatedEvent = clearRequiredAttendees(event.id);
+
+        expect(updatedEvent.requiredAttendees).toEqual([]);
       });
     });
   });

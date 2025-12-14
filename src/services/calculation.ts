@@ -179,3 +179,40 @@ export function formatDuration(minutes: number): string {
   }
   return `${hours}시간 ${remainingMinutes}분`;
 }
+
+/**
+ * Filter availability by required attendees
+ * Returns availability map showing only slots where ALL required attendees are available
+ */
+export function filterByRequiredAttendees(
+  event: Event,
+  availability: Map<string, number>
+): Map<string, number> {
+  // No filtering needed if no required attendees
+  if (event.requiredAttendees.length === 0) {
+    return availability;
+  }
+
+  const filtered = new Map<string, number>();
+
+  event.slots.forEach((slot) => {
+    // Check if all required attendees are available for this slot
+    const allRequiredAvailable = event.requiredAttendees.every((requiredName) => {
+      const vote = event.votes.find((v) => v.participantName === requiredName);
+      if (!vote) return false;
+
+      const slotIndex = event.slots.findIndex((s) => s.id === slot.id);
+      return vote.selections[slotIndex];
+    });
+
+    if (allRequiredAvailable) {
+      // Keep original count if all required are available
+      filtered.set(slot.id, availability.get(slot.id) || 0);
+    } else {
+      // Mark as unavailable
+      filtered.set(slot.id, 0);
+    }
+  });
+
+  return filtered;
+}

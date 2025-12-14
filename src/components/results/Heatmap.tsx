@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import type { Event, TimeSlot } from '@/types';
-import { aggregateVotes, getHeatmapColor, getParticipantsForSlot } from '@/services/calculation';
+import {
+  aggregateVotes,
+  getHeatmapColor,
+  getParticipantsForSlot,
+  filterByRequiredAttendees,
+} from '@/services/calculation';
 
 interface HeatmapProps {
   event: Event;
@@ -16,8 +21,9 @@ interface TooltipData {
 export function Heatmap({ event }: HeatmapProps) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
-  // Aggregate votes
-  const availability = aggregateVotes(event);
+  // Aggregate votes and apply required attendees filter
+  const rawAvailability = aggregateVotes(event);
+  const availability = filterByRequiredAttendees(event, rawAvailability);
   const maxCount = Math.max(...Array.from(availability.values()), 0);
 
   // Get unique dates
@@ -65,6 +71,32 @@ export function Heatmap({ event }: HeatmapProps) {
 
   return (
     <div className="space-y-4">
+      {/* Required Attendees Filter Indicator */}
+      {event.requiredAttendees.length > 0 && (
+        <div className="rounded-md bg-blue-50 border border-blue-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-blue-900">
+                ⭐ 필수 참여자 필터 적용 중:
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {event.requiredAttendees.map((name) => (
+                  <span
+                    key={name}
+                    className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <span className="text-xs text-blue-700">
+              이 참여자들이 모두 가능한 시간만 표시됩니다
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">투표 결과 히트맵</h3>
         <div className="flex items-center gap-2 text-sm text-gray-600">

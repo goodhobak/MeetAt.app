@@ -317,3 +317,41 @@ export function deleteVote(eventId: string, participantName: string): Event {
 export function getVote(event: Event, participantName: string): Vote | undefined {
   return event.votes.find((vote) => vote.participantName === participantName);
 }
+
+// ============ Required Attendees Operations ============
+
+/**
+ * Toggle a participant as required/not required
+ */
+export function toggleRequiredAttendee(eventId: string, participantName: string): Event {
+  const event = getEvent(eventId);
+
+  const isRequired = event.requiredAttendees.includes(participantName);
+
+  const updatedRequired = isRequired
+    ? event.requiredAttendees.filter((name) => name !== participantName)
+    : [...event.requiredAttendees, participantName];
+
+  const updatedEvent: Event = {
+    ...event,
+    requiredAttendees: updatedRequired,
+  };
+
+  saveEvent(updatedEvent);
+  return updatedEvent;
+}
+
+/**
+ * Clear all required attendees
+ */
+export function clearRequiredAttendees(eventId: string): Event {
+  const event = getEvent(eventId);
+
+  const updatedEvent: Event = {
+    ...event,
+    requiredAttendees: [],
+  };
+
+  saveEvent(updatedEvent);
+  return updatedEvent;
+}

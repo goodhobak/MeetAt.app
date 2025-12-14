@@ -6,6 +6,7 @@ import {
   findContinuousBlocks,
   formatBlockTime,
   formatDuration,
+  filterByRequiredAttendees,
 } from '../calculation';
 import type { Event, Vote, TimeSlot } from '@/types';
 
@@ -346,6 +347,97 @@ describe('calculation service', () => {
     it('should format hours and minutes', () => {
       expect(formatDuration(90)).toBe('1시간 30분');
       expect(formatDuration(150)).toBe('2시간 30분');
+    });
+  });
+
+  describe('filterByRequiredAttendees', () => {
+    it('should return original availability when no required attendees', () => {
+      const event = createMockEvent();
+      event.votes = [
+        {
+          participantName: 'Alice',
+          selections: [true, true, false, false, false, false],
+          submittedAt: new Date().toISOString(),
+        },
+      ];
+      event.requiredAttendees = [];
+
+      const availability = aggregateVotes(event);
+      const filtered = filterByRequiredAttendees(event, availability);
+
+      expect(filtered).toEqual(availability);
+    });
+
+    it('should filter slots to only show when all required are available', () => {
+      const event = createMockEvent();
+      event.votes = [
+        {
+          participantName: 'Alice',
+          selections: [true, true, true, false, false, false],
+          submittedAt: new Date().toISOString(),
+        },
+        {
+          participantName: 'Bob',
+          selections: [true, false, true, false, false, false],
+          submittedAt: new Date().toISOString(),
+        },
+      ];
+      event.requiredAttendees = ['Alice', 'Bob'];
+
+      const availability = aggregateVotes(event);
+      const filtered = filterByRequiredAttendees(event, availability);
+
+      // Only slot1 and slot3 have both Alice and Bob
+      expect(filtered.get('slot1')).toBe(2); // Both available
+      expect(filtered.get('slot2')).toBe(0); // Only Alice available
+      expect(filtered.get('slot3')).toBe(2); // Both available
+      expect(filtered.get('slot4')).toBe(0); // Neither available
+    });
+
+    it('should mark slot as 0 if required participant has not voted', () => {
+      const event = createMockEvent();
+      event.votes = [
+        {
+          participantName: 'Alice',
+          selections: [true, true, true, false, false, false],
+          submittedAt: new Date().toISOString(),
+        },
+      ];
+      event.requiredAttendees = ['Alice', 'Bob']; // Bob hasn't voted yet
+
+      const availability = aggregateVotes(event);
+      const filtered = filterByRequiredAttendees(event, availability);
+
+      // All slots should be 0 because Bob hasn't voted
+      event.slots.forEach((slot) => {
+        expect(filtered.get(slot.id)).toBe(0);
+      });
+    });
+
+    it('should handle single required participant', () => {
+      const event = createMockEvent();
+      event.votes = [
+        {
+          participantName: 'Alice',
+          selections: [true, false, true, false, false, false],
+          submittedAt: new Date().toISOString(),
+        },
+        {
+          participantName: 'Bob',
+          selections: [true, true, true, true, true, true],
+          submittedAt: new Date().toISOString(),
+        },
+      ];
+      event.requiredAttendees = ['Alice'];
+
+      const availability = aggregateVotes(event);
+      const filtered = filterByRequiredAttendees(event, availability);
+
+      // Only Alice's slots should show (slot1 and slot3)
+      expect(filtered.get('slot1')).toBe(2); // Alice + Bob
+      expect(filtered.get('slot2')).toBe(0); // Alice not available
+      expect(filtered.get('slot3')).toBe(2); // Alice + Bob
+      expect(filtered.get('slot4')).toBe(0); // Alice not available
     });
   });
 });
