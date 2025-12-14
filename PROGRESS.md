@@ -216,14 +216,31 @@
 - **Current**: 100% (all implemented features)
 - **Unit Tests**: 124 passing / 124 total
 - **Integration Tests**: 0 passing / 0 total
-- **E2E Tests**: 0 passing / 0 total
+- **E2E Tests**: Infrastructure ready (tests pending build fixes)
 
 ### Technical Debt
-- None yet
+- **Build Errors**: TypeScript strict mode errors prevent production build and E2E test execution
+  - Need to fix `exactOptionalPropertyTypes` errors in EventForm, ResultsView, VotingInterface
+  - Need to fix LockState type errors (missing isLocked, failedAttempts properties)
+  - Need to address unused variable warnings
+- **E2E Tests**: Test selectors need to be aligned with actual UI implementation
+  - Interview scheduling test (TC-001) requires UI selector adjustments
+  - Some tests assume Korean UI text, others assume English
 
 ---
 
 ## 🔄 Recent Updates
+
+### 2025-12-14 (E2E Testing Infrastructure)
+- ✅ **ACCEPTANCE TESTS DOCUMENTED** - Comprehensive test scenarios defined!
+- ✅ Created ACCEPTANCE_TESTS.md with 9 test scenarios
+- ✅ Defined TC-001: Interview scheduling end-to-end flow (4-person scheduling)
+- ✅ Set up Playwright E2E testing framework
+- ✅ Installed @playwright/test and Chromium browser
+- ✅ Created smoke tests (tests/e2e/smoke.spec.ts) with 6 test cases
+- ✅ Created interview scheduling tests (tests/e2e/interview-scheduling.spec.ts)
+- ⏸️ E2E test execution pending build issue resolution
+- 📝 Note: TypeScript strict mode errors need to be addressed for E2E execution
 
 ### 2025-12-14 (MVP Complete! 🎉)
 - ✅ **FR-007 COMPLETED** - Time Confirmation feature 100% done!
