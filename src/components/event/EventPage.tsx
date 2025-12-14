@@ -6,9 +6,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import toast from 'react-hot-toast';
 import { getEvent } from '@/services/storage';
 import { LockScreen } from './LockScreen';
+import { SharePanel } from '@/components/shared/SharePanel';
 import type { Event } from '@/types';
 
 export function EventPage() {
@@ -38,14 +38,6 @@ export function EventPage() {
       setLoading(false);
     }
   }, [id]);
-
-  const handleCopyLink = () => {
-    const url = `${window.location.origin}/#/event/${id}`;
-    navigator.clipboard.writeText(url).then(
-      () => toast.success('Link copied to clipboard!'),
-      () => toast.error('Failed to copy link')
-    );
-  };
 
   if (loading) {
     return (
@@ -141,14 +133,8 @@ export function EventPage() {
 
         {/* Share Section */}
         <div className="mt-8 border-t border-gray-200 pt-6">
-          <h3 className="text-lg font-medium text-gray-900">Share this event</h3>
-          <div className="mt-4 flex gap-4">
-            <button
-              onClick={handleCopyLink}
-              className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-            >
-              Copy Link
-            </button>
+          <SharePanel eventId={event.id} />
+          <div className="mt-6">
             <button
               onClick={() => navigate('/')}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
