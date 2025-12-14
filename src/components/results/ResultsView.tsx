@@ -41,7 +41,7 @@ export function ResultsView({ event, onEventChange }: ResultsViewProps) {
 
       {/* Timeline Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <Timeline event={event} onEventChange={onEventChange} />
+        <Timeline event={event} {...(onEventChange && { onEventChange })} />
       </div>
     </div>
   );

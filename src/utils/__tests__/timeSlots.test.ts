@@ -27,8 +27,8 @@ describe('timeSlots', () => {
       const slots = generateTimeSlots(dates, timeRange, false);
 
       expect(slots).toHaveLength(4); // 2 slots per day * 2 days
-      expect(slots[0].date).toBe('2025-12-15');
-      expect(slots[2].date).toBe('2025-12-16');
+      expect(slots[0]!.date).toBe('2025-12-15');
+      expect(slots[2]!.date).toBe('2025-12-16');
     });
 
     it('should exclude lunch hours when specified', () => {
@@ -63,8 +63,8 @@ describe('timeSlots', () => {
       const timeRange = { start: '14:00', end: '15:00' };
       const slots = generateTimeSlots(dates, timeRange, false);
 
-      expect(slots[0].id).toBe('2025-12-15_14:00');
-      expect(slots[1].id).toBe('2025-12-15_14:30');
+      expect(slots[0]!.id).toBe('2025-12-15_14:00');
+      expect(slots[1]!.id).toBe('2025-12-15_14:30');
     });
   });
 

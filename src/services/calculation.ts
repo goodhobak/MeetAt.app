@@ -14,8 +14,8 @@ export function aggregateVotes(event: Event): Map<string, number> {
   // Count votes per slot
   event.votes.forEach((vote) => {
     vote.selections.forEach((isAvailable, index) => {
-      if (isAvailable) {
-        const slotId = event.slots[index].id;
+      if (isAvailable && event.slots[index]) {
+        const slotId = event.slots[index]!.id;
         availability.set(slotId, (availability.get(slotId) || 0) + 1);
       }
     });
@@ -88,7 +88,7 @@ export function findContinuousBlocks(
   let currentBlock: TimeBlock | null = null;
 
   for (let i = 0; i < sortedSlots.length; i++) {
-    const slot = sortedSlots[i];
+    const slot = sortedSlots[i]!;  // Array iteration guarantees slot exists
     const count = availability.get(slot.id) || 0;
 
     if (count === 0) {

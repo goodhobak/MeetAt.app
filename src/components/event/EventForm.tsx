@@ -65,7 +65,7 @@ export function EventForm() {
         candidateDates: validatedData.candidateDates.map(formatDate),
         timeRange: validatedData.timeRange,
         excludeLunch: validatedData.excludeLunch,
-        lunchRange: validatedData.lunchRange,
+        lunchRange: validatedData.lunchRange || DEFAULT_LUNCH_RANGE,
         passwordHash,
         createdAt: new Date().toISOString(),
         slots,

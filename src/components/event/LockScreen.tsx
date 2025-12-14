@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { verifyPassword } from '@/services/crypto';
-import { getLockState, recordFailedAttempt } from '@/services/storage';
+import { getLockState, recordFailedAttempt, isEventLocked } from '@/services/storage';
 
 interface LockScreenProps {
   eventId: string;
@@ -15,7 +15,6 @@ interface LockScreenProps {
 }
 
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 export function LockScreen({ eventId, passwordHash, onUnlock }: LockScreenProps) {
   const [password, setPassword] = useState('');
@@ -24,9 +23,12 @@ export function LockScreen({ eventId, passwordHash, onUnlock }: LockScreenProps)
   const [lockState, setLockState] = useState(() => getLockState(eventId));
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
+  // Calculate if account is locked
+  const isLocked = isEventLocked(eventId);
+
   // Update time remaining for locked state
   useEffect(() => {
-    if (!lockState.isLocked) return;
+    if (!isLocked) return;
 
     const updateTimeRemaining = () => {
       const now = Date.now();
@@ -48,7 +50,7 @@ export function LockScreen({ eventId, passwordHash, onUnlock }: LockScreenProps)
     const interval = setInterval(updateTimeRemaining, 1000);
 
     return () => clearInterval(interval);
-  }, [eventId, lockState.isLocked, lockState.lockedUntil]);
+  }, [eventId, isLocked, lockState.lockedUntil]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,8 +59,8 @@ export function LockScreen({ eventId, passwordHash, onUnlock }: LockScreenProps)
 
     try {
       // Check if locked
-      const currentLockState = getLockState(eventId);
-      if (currentLockState.isLocked) {
+      if (isEventLocked(eventId)) {
+        const currentLockState = getLockState(eventId);
         setLockState(currentLockState);
         setError('Too many failed attempts. Please try again later.');
         setIsVerifying(false);
@@ -76,12 +78,12 @@ export function LockScreen({ eventId, passwordHash, onUnlock }: LockScreenProps)
         const newLockState = recordFailedAttempt(eventId);
         setLockState(newLockState);
 
-        if (newLockState.isLocked) {
+        if (isEventLocked(eventId)) {
           setError(
             `Too many failed attempts. This event is locked for 30 minutes.`
           );
         } else {
-          const attemptsRemaining = MAX_ATTEMPTS - newLockState.failedAttempts;
+          const attemptsRemaining = MAX_ATTEMPTS - newLockState.attempts;
           setError(
             `Incorrect password. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining.`
           );
@@ -128,7 +130,7 @@ export function LockScreen({ eventId, passwordHash, onUnlock }: LockScreenProps)
           </p>
         </div>
 
-        {lockState.isLocked && timeRemaining !== null ? (
+        {isLocked && timeRemaining !== null ? (
           <div className="rounded-md bg-red-50 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -179,11 +181,11 @@ export function LockScreen({ eventId, passwordHash, onUnlock }: LockScreenProps)
               </div>
             )}
 
-            {!error && !lockState.isLocked && lockState.failedAttempts > 0 && (
+            {!error && !isLocked && lockState.attempts > 0 && (
               <div className="rounded-md bg-yellow-50 p-3">
                 <p className="text-sm text-yellow-800">
-                  {MAX_ATTEMPTS - lockState.failedAttempts} attempt
-                  {MAX_ATTEMPTS - lockState.failedAttempts === 1 ? '' : 's'} remaining
+                  {MAX_ATTEMPTS - lockState.attempts} attempt
+                  {MAX_ATTEMPTS - lockState.attempts === 1 ? '' : 's'} remaining
                   before account is locked.
                 </p>
               </div>

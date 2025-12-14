@@ -11,7 +11,6 @@ import {
   submitVote,
   updateVote,
   deleteVote,
-  checkDuplicateParticipant,
   toggleRequiredAttendee,
 } from '@/services/storage';
 import type { Event, Vote } from '@/types';
@@ -44,7 +43,7 @@ export function VotingInterface({ event, onVoteChange }: VotingInterfaceProps) {
 
   const handleSelectMorning = () => {
     const newSelections = event.slots.map((slot) => {
-      const hour = parseInt(slot.time.split(':')[0]);
+      const hour = parseInt(slot.time.split(':')[0] || '0');
       return hour < 12;
     });
     setSelections(newSelections);
@@ -52,7 +51,7 @@ export function VotingInterface({ event, onVoteChange }: VotingInterfaceProps) {
 
   const handleSelectAfternoon = () => {
     const newSelections = event.slots.map((slot) => {
-      const hour = parseInt(slot.time.split(':')[0]);
+      const hour = parseInt(slot.time.split(':')[0] || '0');
       return hour >= 13;
     });
     setSelections(newSelections);
@@ -81,7 +80,8 @@ export function VotingInterface({ event, onVoteChange }: VotingInterfaceProps) {
 
       if (isEditing && editingName) {
         // Update existing vote
-        updatedEvent = updateVote(event.id, editingName, selections);
+        const name: string = editingName; // Type narrowing
+        updatedEvent = updateVote(event.id, name, selections);
         toast.success('Vote updated successfully!');
       } else {
         // Submit new vote
@@ -157,16 +157,16 @@ export function VotingInterface({ event, onVoteChange }: VotingInterfaceProps) {
     }
   };
 
-  // Group slots by date
-  const slotsByDate = event.slots.reduce((acc, slot, index) => {
-    if (!acc[slot.date]) {
-      acc[slot.date] = [];
-    }
-    acc[slot.date].push({ slot, index });
-    return {};
-  }, {} as Record<string, Array<{ slot: typeof event.slots[0]; index: number }>>);
+  // Group slots by date (for future use)
+  // const slotsByDate = event.slots.reduce((acc, slot, index) => {
+  //   if (!acc[slot.date]) {
+  //     acc[slot.date] = [];
+  //   }
+  //   acc[slot.date].push({ slot, index });
+  //   return acc;
+  // }, {} as Record<string, Array<{ slot: typeof event.slots[0]; index: number }>>);
 
-  const dates = Array.from(new Set(event.slots.map((s) => s.date))).sort();
+  // const dates = Array.from(new Set(event.slots.map((s) => s.date))).sort();
 
   return (
     <div className="space-y-6">

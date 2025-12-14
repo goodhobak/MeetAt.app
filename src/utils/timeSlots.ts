@@ -12,7 +12,9 @@ const SLOT_INTERVAL_MINUTES = 30; // 30-minute granularity
  * Parse time string "HH:mm" to minutes since midnight
  */
 function parseTimeToMinutes(timeStr: string): number {
-  const [hours, minutes] = timeStr.split(':').map(Number);
+  const parts = timeStr.split(':');
+  const hours = Number(parts[0] || '0');
+  const minutes = Number(parts[1] || '0');
   return hours * 60 + minutes;
 }
 

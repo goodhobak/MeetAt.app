@@ -23,7 +23,7 @@ import {
   confirmTime,
   unconfirmTime,
 } from '../storage';
-import type { Event, Vote } from '@/types';
+import type { Event } from '@/types';
 
 const createMockEvent = (id: string = 'abc12345'): Event => ({
   id,
@@ -142,8 +142,8 @@ describe('storage service', () => {
       saveEvent(event2);
 
       const events = listEvents();
-      expect(events[0].id).toBe('event002'); // Newer first
-      expect(events[1].id).toBe('event001');
+      expect(events[0]!.id).toBe('event002'); // Newer first
+      expect(events[1]!.id).toBe('event001');
     });
   });
 
@@ -288,7 +288,7 @@ describe('storage service', () => {
 
         const updatedEvent = submitVote(event.id, vote);
         expect(updatedEvent.votes).toHaveLength(1);
-        expect(updatedEvent.votes[0].participantName).toBe('Alice');
+        expect(updatedEvent.votes[0]!.participantName).toBe('Alice');
       });
 
       it('should throw error for duplicate name', () => {
@@ -323,8 +323,8 @@ describe('storage service', () => {
         const newSelections = [false, true, true];
         const updatedEvent = updateVote(event.id, 'Alice', newSelections);
 
-        expect(updatedEvent.votes[0].selections).toEqual(newSelections);
-        expect(updatedEvent.votes[0].updatedAt).toBeDefined();
+        expect(updatedEvent.votes[0]!.selections).toEqual(newSelections);
+        expect(updatedEvent.votes[0]!.updatedAt).toBeDefined();
       });
 
       it('should not affect other votes', () => {
@@ -336,8 +336,8 @@ describe('storage service', () => {
         saveEvent(event);
 
         const updatedEvent = updateVote(event.id, 'Alice', [false]);
-        expect(updatedEvent.votes[1].selections).toEqual([false]);
-        expect(updatedEvent.votes[1].updatedAt).toBeUndefined();
+        expect(updatedEvent.votes[1]!.selections).toEqual([false]);
+        expect(updatedEvent.votes[1]!.updatedAt).toBeUndefined();
       });
     });
 
@@ -352,7 +352,7 @@ describe('storage service', () => {
 
         const updatedEvent = deleteVote(event.id, 'Alice');
         expect(updatedEvent.votes).toHaveLength(1);
-        expect(updatedEvent.votes[0].participantName).toBe('Bob');
+        expect(updatedEvent.votes[0]!.participantName).toBe('Bob');
       });
     });
 

@@ -3,7 +3,7 @@
  * Based on DATA_SCHEMA.md - LocalStorage Layer
  */
 
-import type { Event, LockState } from '@/types';
+import type { Event, LockState, Vote } from '@/types';
 import { validateEvent } from './validation';
 
 const EVENT_KEY_PREFIX = 'event:';
@@ -379,7 +379,7 @@ export function confirmTime(
     end: endDateTime.toISOString(),
     confirmedBy: organizerName,
     confirmedAt: new Date().toISOString(),
-    note: note || undefined,
+    ...(note && { note }),
   };
 
   const updatedEvent: Event = {

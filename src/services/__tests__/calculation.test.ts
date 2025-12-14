@@ -8,7 +8,7 @@ import {
   formatDuration,
   filterByRequiredAttendees,
 } from '../calculation';
-import type { Event, Vote, TimeSlot } from '@/types';
+import type { Event, TimeSlot } from '@/types';
 
 const createMockEvent = (): Event => ({
   id: 'test123',
@@ -29,6 +29,8 @@ const createMockEvent = (): Event => ({
   votes: [],
   passwordHash: null,
   createdAt: new Date().toISOString(),
+  requiredAttendees: [],
+  confirmed: null,
 });
 
 describe('calculation service', () => {
@@ -187,10 +189,10 @@ describe('calculation service', () => {
       const blocks = findContinuousBlocks(event, availability, 60);
 
       expect(blocks).toHaveLength(1);
-      expect(blocks[0].start.id).toBe('slot1');
-      expect(blocks[0].end.id).toBe('slot3');
-      expect(blocks[0].duration).toBe(90); // 3 slots * 30 min
-      expect(blocks[0].availableCount).toBe(1);
+      expect(blocks[0]!.start.id).toBe('slot1');
+      expect(blocks[0]!.end.id).toBe('slot3');
+      expect(blocks[0]!.duration).toBe(90); // 3 slots * 30 min
+      expect(blocks[0]!.availableCount).toBe(1);
     });
 
     it('should not return blocks shorter than required duration', () => {
@@ -255,7 +257,7 @@ describe('calculation service', () => {
       const blocks = findContinuousBlocks(event, availability, 60);
 
       expect(blocks).toHaveLength(1);
-      expect(blocks[0].availableCount).toBe(1); // Min of [2, 1, 2]
+      expect(blocks[0]!.availableCount).toBe(1); // Min of [2, 1, 2]
     });
 
     it('should only include participants available for entire block', () => {
@@ -278,7 +280,7 @@ describe('calculation service', () => {
 
       expect(blocks).toHaveLength(1);
       // Alice is available for all three slots in the block
-      expect(blocks[0].participants).toEqual(['Alice']);
+      expect(blocks[0]!.participants).toEqual(['Alice']);
     });
 
     it('should sort blocks by availability count descending', () => {
@@ -308,7 +310,7 @@ describe('calculation service', () => {
       expect(blocks.length).toBeGreaterThan(0);
       // First block should have highest count
       if (blocks.length > 1) {
-        expect(blocks[0].availableCount).toBeGreaterThanOrEqual(blocks[1].availableCount);
+        expect(blocks[0]!.availableCount).toBeGreaterThanOrEqual(blocks[1]!.availableCount);
       }
     });
   });
